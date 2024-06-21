@@ -1,6 +1,4 @@
 import tkinter as tk
-#from tkinter import * 
-#from tkinter.ttk import *
 import os
 import time
 import threading
@@ -21,9 +19,19 @@ enteredP1Name = ""
 enteredP2Name = ""
 enteredP1Deck = ""
 enteredP2Deck = ""
-enteredP1GameWins = ""
-enteredP2GameWins = ""
+enteredP1GameWins = "0"
+enteredP2GameWins = "0"
 enteredCardName = ""
+
+global pushedP1Life
+global pushedP2Life
+global pushedP1Name
+global pushedP2Name
+global pushedP1Deck
+global pushedP2Deck
+global pushedP1GameWins
+global pushedP2GameWins
+global pushedCardName
 
 pushedP1Life = ""
 pushedP2Life = ""
@@ -31,8 +39,8 @@ pushedP1Name = ""
 pushedP2Name = ""
 pushedP1Deck = ""
 pushedP2Deck = ""
-pushedP1GameWins = ""
-pushedP2GameWins = ""
+pushedP1GameWins = "0"
+pushedP2GameWins = "0"
 pushedCardName = ""
 
 def keepWindowOpen():
@@ -60,6 +68,35 @@ def keepWindowOpen():
     guiP2GameWins = tk.StringVar()
     guiCardName = tk.StringVar()
 
+    def enterValues(var, index, mode):
+            global enteredP1Life
+            global enteredP2Life
+            global enteredP1Name
+            global enteredP2Name
+            global enteredP1Deck
+            global enteredP2Deck
+            global enteredP1GameWins
+            global enteredP2GameWins
+            global enteredCardName
+            enteredP1Life = guiP1Life.get()
+            enteredP2Life = guiP2Life.get()
+            enteredP1Name = guiP1Name.get()
+            enteredP2Name = guiP2Name.get()
+            enteredP1Deck = guiP1Deck.get()
+            enteredP2Deck = guiP2Deck.get()
+            enteredP1GameWins = guiP1GameWins.get()
+            enteredP2GameWins = guiP2GameWins.get()
+            enteredCardName = guiCardName.get()
+
+    guiP1Life.trace_add('write', enterValues)
+    guiP2Life.trace_add('write', enterValues)
+    guiP1Name.trace_add('write', enterValues)
+    guiP2Name.trace_add('write', enterValues)
+    guiP1Deck.trace_add('write', enterValues)
+    guiP2Deck.trace_add('write', enterValues)
+    guiP1GameWins.trace_add('write', enterValues)
+    guiP2GameWins.trace_add('write', enterValues)
+    guiCardName.trace_add('write', enterValues)
 
     p1Label = tk.Label(master, text="Player 1:")
     p1LifeLabel = tk.Label(master, text="Life Total")
@@ -110,26 +147,6 @@ def keepWindowOpen():
     displayCardNameLabel.grid(row=8, column=0)
     cardNameEntry.grid(row=9, column=0)
     
-    def enterValues():
-        global enteredP1Life
-        global enteredP2Life
-        global enteredP1Name
-        global enteredP2Name
-        global enteredP1Deck
-        global enteredP2Deck
-        global enteredP1GameWins
-        global enteredP2GameWins
-        global enteredCardName
-        enteredP1Life = guiP1Life.get()
-        enteredP2Life = guiP2Life.get()
-        enteredP1Name = guiP1Name.get()
-        enteredP2Name = guiP2Name.get()
-        enteredP1Deck = guiP1Deck.get()
-        enteredP2Deck = guiP2Deck.get()
-        enteredP1GameWins = guiP1GameWins.get()
-        enteredP2GameWins = guiP2GameWins.get()
-        enteredCardName = guiCardName.get()
-    enterValues()
     master.mainloop()
 
 def checkForValueUpdates():
@@ -143,36 +160,92 @@ def checkForValueUpdates():
     global enteredP1GameWins
     global enteredP2GameWins
     global enteredCardName
+    global pushedP1Life
+    global pushedP2Life
+    global pushedP1Name
+    global pushedP2Name
+    global pushedP1Deck
+    global pushedP2Deck
+    global pushedP1GameWins
+    global pushedP2GameWins
+    global pushedCardName
 
-    print(enteredP1Life)
-    print(pushedP1Life)
+    def updateCombinedGameWins():
+        p1wins = pushedP1GameWins
+        p2wins = pushedP2GameWins
+        if p1wins == "":
+            p1wins = "0"
+        if p2wins == "":
+            p2wins = "0"
+        combinedGamewins = p1wins + " - " + p2wins
+        file = open('controller output files\\combined game wins.txt', 'w')
+        file.write(combinedGamewins)
+        file.close()
+
     if enteredP1Life != pushedP1Life:
-        #print('p1 life changed!')
-        print(enteredP1Life)
+        pushedP1Life = enteredP1Life
+        print(pushedP1Life)
+        file = open('controller output files\\player 1 life.txt', 'w')
+        file.write(pushedP1Life)
+        file.close()
         
     if enteredP2Life != pushedP2Life:
-        pass
-        
+        pushedP2Life = enteredP2Life
+        print(pushedP2Life)
+        file = open('controller output files\\player 2 life.txt', 'w')
+        file.write(pushedP2Life)
+        file.close()
+             
     if enteredP1Name != pushedP1Name:
-        pass
-        
+        pushedP1Name =enteredP1Name
+        print(pushedP1Name)
+        file = open('controller output files\\player 1 name.txt', 'w')
+        file.write(pushedP1Name)
+        file.close()
+             
     if enteredP2Name != pushedP2Name:
-        pass
-
+        pushedP2Name = enteredP2Name 
+        print(pushedP2Name)
+        file = open('controller output files\\player 2 name.txt', 'w')
+        file.write(pushedP2Name)
+        file.close()
+             
     if enteredP1Deck != pushedP1Deck:
-        pass
+        pushedP1Deck = enteredP1Deck
+        print(pushedP1Deck)
+        file = open('controller output files\\player 1 deck.txt', 'w')
+        file.write(pushedP1Deck)
+        file.close()
 
     if enteredP2Deck != pushedP2Deck:
-        pass
+        pushedP2Deck = enteredP2Deck
+        print(pushedP2Deck)
+        file = open('controller output files\\player 2 deck.txt', 'w')
+        file.write(pushedP2Deck)
+        file.close()
         
     if enteredP1GameWins != pushedP1GameWins:
-        pass
+        pushedP1GameWins = enteredP1GameWins
+        print(pushedP1GameWins)
+        file = open('controller output files\\player 1 game wins.txt', 'w')
+        file.write(pushedP1GameWins)
+        file.close()
+        updateCombinedGameWins()
 
     if enteredP2GameWins != pushedP2GameWins:
-        pass
+        pushedP2GameWins = enteredP2GameWins
+        print(pushedP2GameWins)
+        file = open('controller output files\\player 2 game wins.txt', 'w')
+        file.write(pushedP2GameWins)
+        file.close()
+        updateCombinedGameWins()
 
     if enteredCardName != pushedCardName:
-        pass
+        pushedCardName = enteredCardName
+        print(pushedCardName)
+        file = open('controller output files\\display Card Name.txt', 'w')
+        file.write(pushedCardName)
+        file.close()
     
 windowThred = threading.Thread(group = None, target = keepWindowOpen)
 windowThred.start()
@@ -181,33 +254,5 @@ while True:
     threadCount = threading.active_count()
     checkForValueUpdates()
     time.sleep(delaySeconds)
-
-#updateThread = threading.Thread(group = None, target = checkForValueUpdates)
-
-
-#threadCount = threading.active_count()
-#updateThread = threading.Thread(group = None, target = checkForValueUpdates, args=[guiP1Life.get(), guiP2Life.get(), guiP1Name.get(), guiP2Name.get(), guiP1Deck.get(), guiP2Deck.get(), guiP1GameWins.get(), guiP2GameWins.get(), guiCardName.get()])
-#if threadCount < 1 :
-#    updateThread.start()
-
- 
- 
-while True:
-    print(guiP1Life.get())
-
-# open, read, and close the files
-    # Above variables 
-    # Combined gamewins string
-
-# Write values to the gui ('saving' from previous launch)
-
-#while (True):
-    # read the gui 
-
-    # if gui and files are missmatched:
-        # Open appropriate file(s), write new gui values to files, reassign  file variables, then close file(s).
-    
-
-   # pass
-
-
+    if threadCount <= 1:
+        exit(1)
