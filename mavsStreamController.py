@@ -1,7 +1,9 @@
 import tkinter as tk
-import os
 import time
 import threading
+import json
+#from pillow import image
+import requests
 
 global enteredP1Life
 global enteredP2Life
@@ -19,8 +21,8 @@ enteredP1Name = ""
 enteredP2Name = ""
 enteredP1Deck = ""
 enteredP2Deck = ""
-enteredP1GameWins = "0"
-enteredP2GameWins = "0"
+enteredP1GameWins = ""
+enteredP2GameWins = ""
 enteredCardName = ""
 
 global pushedP1Life
@@ -33,15 +35,15 @@ global pushedP1GameWins
 global pushedP2GameWins
 global pushedCardName
 
-pushedP1Life = ""
-pushedP2Life = ""
-pushedP1Name = ""
-pushedP2Name = ""
-pushedP1Deck = ""
-pushedP2Deck = ""
+pushedP1Life = "20"
+pushedP2Life = "20"
+pushedP1Name = "Player 1"
+pushedP2Name = "Player 2"
+pushedP1Deck = "P1 Deck"
+pushedP2Deck = "P2 Deck"
 pushedP1GameWins = "0"
 pushedP2GameWins = "0"
-pushedCardName = ""
+pushedCardName = "Chillarpillar"
 
 def keepWindowOpen():
 
@@ -149,8 +151,30 @@ def keepWindowOpen():
     
     master.mainloop()
 
+def saveCardImage(cardName):
+    if cardName != "":
+        #get cardname scyfall uri
+        url = 'https://api.scryfall.com/cards/named?fuzzy=' + cardName.replace(" ", "+")
+        request = requests.get(url=url)
+        sucess = 200
+        if request.status_code == sucess:
+            cardJson = json.loads(request.content)
+            imageUrl = cardJson["image_uris"]["large"]
+            imageRequest = requests.get(imageUrl)
+            image = imageRequest.content
+            file = open("controller output files\\displayCardImage.jpg", 'wb')
+            file.write(image)
+            file.close()
+           
+        else:
+            print("Failed to connect. Status code: " + str(request.status_code))
+
+        #get list of printings
+        #find printing that is not full art, is not a variation, non promoprioritizing standard legal printings
+        #If it cant, itll find the default printing.
+
+
 def checkForValueUpdates():
-        #guiP1Life, guiP2Life, guiP1Name, guiP2Name, guiP1Deck, guiP2Deck, guiP1GameWins, guiP2GameWins, guiCardName):
     global enteredP1Life
     global enteredP2Life
     global enteredP1Name
@@ -178,7 +202,11 @@ def checkForValueUpdates():
         if p2wins == "":
             p2wins = "0"
         combinedGamewins = p1wins + " - " + p2wins
-        file = open('controller output files\\combined game wins.txt', 'w')
+        file = open('controller output files\\Combined GameWins.txt', 'w')
+        file.write(combinedGamewins)
+        file.close()
+        combinedGamewins = p2wins + " - " + p1wins
+        file = open('controller output files\\Combined GameWins Reveresed.txt', 'w')
         file.write(combinedGamewins)
         file.close()
 
@@ -246,6 +274,7 @@ def checkForValueUpdates():
         file = open('controller output files\\display Card Name.txt', 'w')
         file.write(pushedCardName)
         file.close()
+        saveCardImage(pushedCardName)
     
 windowThred = threading.Thread(group = None, target = keepWindowOpen)
 windowThred.start()
