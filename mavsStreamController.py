@@ -2,8 +2,9 @@ import tkinter as tk
 import time
 import threading
 import json
-#from pillow import image
 import requests
+from sys import exit
+from PIL import Image, ImageTk
 
 global enteredP1Life
 global enteredP2Life
@@ -15,15 +16,15 @@ global enteredP1GameWins
 global enteredP2GameWins
 global enteredCardName
 
-enteredP1Life = ""
-enteredP2Life = ""
-enteredP1Name = ""
-enteredP2Name = ""
-enteredP1Deck = ""
-enteredP2Deck = ""
-enteredP1GameWins = ""
-enteredP2GameWins = ""
-enteredCardName = ""
+enteredP1Life = "20"
+enteredP2Life = "20"
+enteredP1Name = "Player 1"
+enteredP2Name = "Player 2"
+enteredP1Deck = "P1 Deck"
+enteredP2Deck = "P2 Deck"
+enteredP1GameWins = "0"
+enteredP2GameWins = "0"
+enteredCardName = "Chub Toad"
 
 global pushedP1Life
 global pushedP2Life
@@ -35,14 +36,14 @@ global pushedP1GameWins
 global pushedP2GameWins
 global pushedCardName
 
-pushedP1Life = "20"
-pushedP2Life = "20"
-pushedP1Name = "Player 1"
-pushedP2Name = "Player 2"
-pushedP1Deck = "P1 Deck"
-pushedP2Deck = "P2 Deck"
-pushedP1GameWins = "0"
-pushedP2GameWins = "0"
+pushedP1Life = ""
+pushedP2Life = ""
+pushedP1Name = ""
+pushedP2Name = ""
+pushedP1Deck = ""
+pushedP2Deck = ""
+pushedP1GameWins = ""
+pushedP2GameWins = ""
 pushedCardName = "Chillarpillar"
 
 def keepWindowOpen():
@@ -58,7 +59,13 @@ def keepWindowOpen():
     global enteredCardName
 
     master = tk.Tk()
-    master.geometry("600x350")
+    master.geometry("450x250")
+    master.configure(bg="#2A2A2A")
+    master.title("Stream Overlay Controller")
+    ico = Image.open('controllerIcon.png')
+    ico = Image.open('Mlogo.png')
+    photo = ImageTk.PhotoImage(ico)
+    master.wm_iconphoto(False, photo)
 
     guiP1Life = tk.StringVar()
     guiP2Life = tk.StringVar()
@@ -100,30 +107,30 @@ def keepWindowOpen():
     guiP2GameWins.trace_add('write', enterValues)
     guiCardName.trace_add('write', enterValues)
 
-    p1Label = tk.Label(master, text="Player 1:")
-    p1LifeLabel = tk.Label(master, text="Life Total")
-    p1NameLabel = tk.Label(master, text="Name")
-    p1DeckLabel = tk.Label(master, text="Deck")
+    p1Label = tk.Label(master, text="          Player 1:          ", bg="#AE3FB9")
+    p1LifeLabel = tk.Label(master, text="Life Total", bg="#AE3FB9")
+    p1NameLabel = tk.Label(master, text="Name", bg="#AE3FB9")
+    p1DeckLabel = tk.Label(master, text="Deck", bg="#AE3FB9")
 
-    p1LifeEntry = tk.Entry(master, textvariable=guiP1Life)
-    p1NameEntry = tk.Entry(master, textvariable=guiP1Name)
-    p1DeckEntry = tk.Entry(master, textvariable=guiP1Deck)
-    p1GameWins = tk.Entry(master, textvariable=guiP1GameWins)
+    p1LifeEntry = tk.Entry(master, textvariable=guiP1Life, justify='center', width=5, bg="#E968F5")
+    p1NameEntry = tk.Entry(master, textvariable=guiP1Name, justify='center', bg="#E968F5")
+    p1DeckEntry = tk.Entry(master, textvariable=guiP1Deck, justify='center', bg="#E968F5")
+    p1GameWins = tk.Entry(master, textvariable=guiP1GameWins, justify='center', width=5, bg="#E968F5")
 
-    gameWinsLabel2 = tk.Label(master, text=" - ")
-    gameWinsLabel1 = tk.Label(master, text="Game Wins")
-    displayCardNameLabel = tk.Label(master, text="Enter card name:")
-    cardNameEntry = tk.Entry(master, textvariable=guiCardName)
+    gameWinsLabel2 = tk.Label(master, text="          -          ", bg="#757575")
+    gameWinsLabel1 = tk.Label(master, text="Game Wins", bg="#656565")
+    displayCardNameLabel = tk.Label(master, text="Enter card name:", bg="#C1C27C")
+    cardNameEntry = tk.Entry(master, textvariable=guiCardName, justify='center', bg="#E4E594")
 
-    p2Label = tk.Label(master, text="Player 2:")
-    p2LifeLabel = tk.Label(master, text="Life Total")
-    p2NameLabel = tk.Label(master, text="Name")
-    p2DeckLabel = tk.Label(master, text="Deck")
+    p2Label = tk.Label(master, text="          Player 2:          ", bg="#46B6B8")
+    p2LifeLabel = tk.Label(master, text="Life Total", bg="#46B6B8")
+    p2NameLabel = tk.Label(master, text="Name", bg="#46B6B8")
+    p2DeckLabel = tk.Label(master, text="Deck", bg="#46B6B8")
 
-    p2LifeEntry = tk.Entry(master, textvariable=guiP2Life)
-    p2NameEntry = tk.Entry(master, textvariable=guiP2Name)
-    p2DeckEntry = tk.Entry(master, textvariable=guiP2Deck)
-    p2GameWins = tk.Entry(master, textvariable=guiP2GameWins)
+    p2LifeEntry = tk.Entry(master, textvariable=guiP2Life, justify='center', width=5, bg="#5CDFE1")
+    p2NameEntry = tk.Entry(master, textvariable=guiP2Name, justify='center', bg="#5CDFE1")
+    p2DeckEntry = tk.Entry(master, textvariable=guiP2Deck, justify='center', bg="#5CDFE1")
+    p2GameWins = tk.Entry(master, textvariable=guiP2GameWins, justify='center', width=5, bg="#5CDFE1")
 
     # Place on grid
     p1Label.grid(row=0, column=0)
@@ -133,7 +140,7 @@ def keepWindowOpen():
     p1NameEntry.grid(row=2, column=0)
     p1DeckLabel.grid(row=3, column=0)
     p1DeckEntry.grid(row=4, column=0)
-    p1GameWins.grid(row=5, column=1)
+    p1GameWins.grid(row=5, column=1, sticky="e")
 
     p2Label.grid(row=0, column=5)
     p2LifeLabel.grid(row=1, column=4)
@@ -142,7 +149,7 @@ def keepWindowOpen():
     p2NameEntry.grid(row=2, column=5)
     p2DeckLabel.grid(row=3, column=5)
     p2DeckEntry.grid(row=4, column=5)
-    p2GameWins.grid(row=5, column=4)
+    p2GameWins.grid(row=5, column=4, sticky="w")
 
     gameWinsLabel1.grid(row=4, column=3)
     gameWinsLabel2.grid(row=5, column=3)
@@ -153,7 +160,6 @@ def keepWindowOpen():
 
 def saveCardImage(cardName):
     if cardName != "":
-        #get cardname scyfall uri
         url = 'https://api.scryfall.com/cards/named?fuzzy=' + cardName.replace(" ", "+")
         request = requests.get(url=url)
         sucess = 200
@@ -165,14 +171,8 @@ def saveCardImage(cardName):
             file = open("controller output files\\displayCardImage.jpg", 'wb')
             file.write(image)
             file.close()
-           
         else:
             print("Failed to connect. Status code: " + str(request.status_code))
-
-        #get list of printings
-        #find printing that is not full art, is not a variation, non promoprioritizing standard legal printings
-        #If it cant, itll find the default printing.
-
 
 def checkForValueUpdates():
     global enteredP1Life
