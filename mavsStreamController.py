@@ -62,9 +62,7 @@ def keepWindowOpen():
     master.geometry("450x250")
     master.configure(bg="#2A2A2A")
     master.title("Stream Overlay Controller")
-    ico = Image.open('controllerIcon.png')
-    ico = Image.open('Mlogo.png')
-    photo = ImageTk.PhotoImage(ico)
+    photo = tk.PhotoImage(file='Mlogo.png')
     master.wm_iconphoto(False, photo)
 
     guiP1Life = tk.StringVar()
