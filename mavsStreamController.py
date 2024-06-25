@@ -4,7 +4,16 @@ import threading
 import json
 import requests
 from sys import exit
-from PIL import Image, ImageTk
+from PIL import Image
+from PIL import ImageTk
+
+global lifeControllerIsOn
+lifeControllerIsOn = False
+
+global displayCardInsuranceTime
+displayCardInsuranceTime = 0
+global doubleChecked
+doubleChecked = False
 
 global enteredP1Life
 global enteredP2Life
@@ -25,6 +34,7 @@ enteredP2Deck = "P2 Deck"
 enteredP1GameWins = "0"
 enteredP2GameWins = "0"
 enteredCardName = "Chub Toad"
+lastEnteredCardName = ""
 
 global pushedP1Life
 global pushedP2Life
@@ -57,13 +67,18 @@ def keepWindowOpen():
     global enteredP1GameWins
     global enteredP2GameWins
     global enteredCardName
+    global lifeControllerIsOn
 
     master = tk.Tk()
-    master.geometry("450x250")
+    master.geometry("725x360")
     master.configure(bg="#2A2A2A")
     master.title("Stream Overlay Controller")
-    photo = tk.PhotoImage(file='Mlogo.png')
-    master.wm_iconphoto(False, photo)
+
+    try:
+        photo = tk.PhotoImage(file='Mlogo.png')
+        master.wm_iconphoto(False, photo)
+    except:
+        pass
 
     guiP1Life = tk.StringVar()
     guiP2Life = tk.StringVar()
@@ -74,26 +89,60 @@ def keepWindowOpen():
     guiP1GameWins = tk.StringVar()
     guiP2GameWins = tk.StringVar()
     guiCardName = tk.StringVar()
+    guiControllerToggle = tk.BooleanVar()
 
     def enterValues(var, index, mode):
-            global enteredP1Life
-            global enteredP2Life
-            global enteredP1Name
-            global enteredP2Name
-            global enteredP1Deck
-            global enteredP2Deck
-            global enteredP1GameWins
-            global enteredP2GameWins
-            global enteredCardName
+        global enteredP1Life
+        global enteredP2Life
+        global enteredP1Name
+        global enteredP2Name
+        global enteredP1Deck
+        global enteredP2Deck
+        global enteredP1GameWins
+        global enteredP2GameWins
+        global enteredCardName
+        global lifeControllerIsOn
+        global displayCardInsuranceTime
+
+        if lifeControllerIsOn == False:
             enteredP1Life = guiP1Life.get()
             enteredP2Life = guiP2Life.get()
-            enteredP1Name = guiP1Name.get()
-            enteredP2Name = guiP2Name.get()
-            enteredP1Deck = guiP1Deck.get()
-            enteredP2Deck = guiP2Deck.get()
             enteredP1GameWins = guiP1GameWins.get()
             enteredP2GameWins = guiP2GameWins.get()
-            enteredCardName = guiCardName.get()
+
+        enteredP1Name = guiP1Name.get()
+        enteredP2Name = guiP2Name.get()
+        enteredP1Deck = guiP1Deck.get()
+        enteredP2Deck = guiP2Deck.get()
+        enteredCardName = guiCardName.get()
+
+
+        if (guiCardName.get() != pushedCardName):
+            height = 350
+            width = 250
+            cardImage = Image.open('controller output files\\displayCardImage.png')
+            cardImage = cardImage.resize((width, height))
+            cardPhotoImage = ImageTk.PhotoImage(cardImage)
+            displayCard = tk.Label(master, image=cardPhotoImage)
+            displayCard.photo = cardPhotoImage
+            displayCard.place(in_=master, relx=0.995, rely=0.005, x=-(width+2), y=2)
+
+    def updateControllerState(var, index, mode):
+        global lifeControllerIsOn
+        lifeControllerIsOn = guiControllerToggle.get()
+    
+    def doubleCheckDisplayCard(var, index, mode):
+        global doubleChecked
+        if (15 < displayCardInsuranceTime) and (not doubleChecked):
+            height = 350
+            width = 250
+            cardImage = Image.open('controller output files\\displayCardImage.png')
+            cardImage = cardImage.resize((width, height))
+            cardPhotoImage = ImageTk.PhotoImage(cardImage)
+            displayCard = tk.Label(master, image=cardPhotoImage)
+            displayCard.photo = cardPhotoImage
+            displayCard.place(in_=master, relx=0.995, rely=0.005, x=-(width+2), y=2)
+            doubleChecked = True
 
     guiP1Life.trace_add('write', enterValues)
     guiP2Life.trace_add('write', enterValues)
@@ -104,6 +153,8 @@ def keepWindowOpen():
     guiP1GameWins.trace_add('write', enterValues)
     guiP2GameWins.trace_add('write', enterValues)
     guiCardName.trace_add('write', enterValues)
+    guiCardName.trace_add('read', doubleCheckDisplayCard)
+    guiControllerToggle.trace_add('write', updateControllerState)
 
     p1Label = tk.Label(master, text="          Player 1:          ", bg="#AE3FB9")
     p1LifeLabel = tk.Label(master, text="Life Total", bg="#AE3FB9")
@@ -119,7 +170,10 @@ def keepWindowOpen():
     gameWinsLabel1 = tk.Label(master, text="Game Wins", bg="#656565")
     displayCardNameLabel = tk.Label(master, text="Enter card name:", bg="#C1C27C")
     cardNameEntry = tk.Entry(master, textvariable=guiCardName, justify='center', bg="#E4E594")
-
+    physicalControllerToggleLabel = tk.Label(master, text="Physical Controller?", bg="#695EB5")
+    physicalControllerToggle = tk.Checkbutton(master, variable=guiControllerToggle, justify='center', bg="#695EB5")
+       
+    
     p2Label = tk.Label(master, text="          Player 2:          ", bg="#46B6B8")
     p2LifeLabel = tk.Label(master, text="Life Total", bg="#46B6B8")
     p2NameLabel = tk.Label(master, text="Name", bg="#46B6B8")
@@ -129,6 +183,29 @@ def keepWindowOpen():
     p2NameEntry = tk.Entry(master, textvariable=guiP2Name, justify='center', bg="#5CDFE1")
     p2DeckEntry = tk.Entry(master, textvariable=guiP2Deck, justify='center', bg="#5CDFE1")
     p2GameWins = tk.Entry(master, textvariable=guiP2GameWins, justify='center', width=5, bg="#5CDFE1")
+
+    def checkForToggleDisables():
+        
+        while(windowThread.is_alive() == True):
+            time.sleep(0.15)
+            global pushedP1Life
+            global pushedP2Life
+            global pushedP1GameWins
+            global pushedP2GameWins
+            if lifeControllerIsOn:     
+                p1LifeEntry.configure(text=pushedP1Life, state='disabled', disabledbackground="#E1B4E5")
+                p2LifeEntry.configure(text=pushedP2Life, state='disabled', disabledbackground="#A8CBCB")
+                p1GameWins.configure(text=pushedP1GameWins, state='disabled', disabledbackground="#E1B4E5")
+                p2GameWins.configure(text=pushedP2GameWins, state='disabled', disabledbackground="#A8CBCB")
+            else:
+                p1LifeEntry.configure(state='normal')
+                p2LifeEntry.configure(state='normal')
+                p1GameWins.configure(state='normal')
+                p2GameWins.configure(state='normal')
+
+    toggleCheckThread = threading.Thread(group = None, target = checkForToggleDisables)
+    toggleCheckThread.daemon = True
+    toggleCheckThread.start()
 
     # Place on grid
     p1Label.grid(row=0, column=0)
@@ -151,26 +228,47 @@ def keepWindowOpen():
 
     gameWinsLabel1.grid(row=4, column=3)
     gameWinsLabel2.grid(row=5, column=3)
-    displayCardNameLabel.grid(row=8, column=0)
-    cardNameEntry.grid(row=9, column=0)
+    displayCardNameLabel.grid(row=8, column=5)
+    cardNameEntry.grid(row=9, column=5)
+    physicalControllerToggleLabel.grid(row=2, column=3)
+    physicalControllerToggle.grid(row=3, column=3)
+    #displayCardImage.grid(row=8, column=0)
     
+
     master.mainloop()
 
 def saveCardImage(cardName):
+    global displayCardInsuranceTime
+    global doubleChecked
     if cardName != "":
-        url = 'https://api.scryfall.com/cards/named?fuzzy=' + cardName.replace(" ", "+")
+        url = 'https://api.scryfall.com/cards/named?fuzzy=' + cardName.strip().replace(" ", "+")
         request = requests.get(url=url)
         sucess = 200
         if request.status_code == sucess:
-            cardJson = json.loads(request.content)
-            imageUrl = cardJson["image_uris"]["large"]
-            imageRequest = requests.get(imageUrl)
-            image = imageRequest.content
-            file = open("controller output files\\displayCardImage.jpg", 'wb')
-            file.write(image)
-            file.close()
+            try:
+                cardJson = json.loads(request.content)
+                imageUrl = cardJson["image_uris"]["large"]
+                imageRequest = requests.get(imageUrl)
+                image = imageRequest.content
+                file = open("controller output files\\displayCardImage.png", 'wb')
+                file.write(image)
+                file.close()
+                displayCardInsuranceTime = 0
+                doubleChecked = False
+            except:
+                print("Scryfall search failed. Status code: " + str(request.status_code))
         else:
             print("Failed to connect. Status code: " + str(request.status_code))
+
+def isRealCardName(cardName):
+    if cardName != "":
+        url = 'https://api.scryfall.com/cards/named?fuzzy=' + cardName.strip().replace(" ", "+")
+        request = requests.get(url=url)
+        sucess = 200
+        if request.status_code == sucess:
+            return True
+        else:
+            return False
 
 def checkForValueUpdates():
     global enteredP1Life
@@ -266,20 +364,32 @@ def checkForValueUpdates():
         file.close()
         updateCombinedGameWins()
 
+    global lastEnteredCardName
     if enteredCardName != pushedCardName:
+        saveCardImage(enteredCardName)
         pushedCardName = enteredCardName
-        print(pushedCardName)
+        print("Pushed: " + pushedCardName)
         file = open('controller output files\\display Card Name.txt', 'w')
         file.write(pushedCardName)
         file.close()
-        saveCardImage(pushedCardName)
-    
-windowThred = threading.Thread(group = None, target = keepWindowOpen)
-windowThred.start()
-delaySeconds = 0.5
-while True:
-    threadCount = threading.active_count()
-    checkForValueUpdates()
+
+def runSerialReader():
+    pass
+
+saveCardImage("Chillarpillar")    
+windowThread = threading.Thread(group = None, target = keepWindowOpen)
+windowThread.start()
+time.sleep(0.1)
+delaySeconds = 0.1
+
+while threading.active_count() > 2:
+    updateThread = threading.Thread(group = None, target = checkForValueUpdates())
+    if updateThread.is_alive == False:
+        updateThread.start()
+    #checkForValueUpdates()
+    if lifeControllerIsOn:
+        runSerialReader()
     time.sleep(delaySeconds)
-    if threadCount <= 1:
-        exit(1)
+    displayCardInsuranceTime += 1
+
+raise SystemExit()
