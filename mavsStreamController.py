@@ -6,14 +6,13 @@ import requests
 from sys import exit
 from PIL import Image
 from PIL import ImageTk
+from io import BytesIO
 
 global lifeControllerIsOn
 lifeControllerIsOn = False
 
-global displayCardInsuranceTime
-displayCardInsuranceTime = 0
-global doubleChecked
-doubleChecked = False
+global guiCardImageName
+guiCardImageName = ""
 
 global enteredP1Life
 global enteredP2Life
@@ -25,17 +24,6 @@ global enteredP1GameWins
 global enteredP2GameWins
 global enteredCardName
 
-enteredP1Life = "20"
-enteredP2Life = "20"
-enteredP1Name = "Player 1"
-enteredP2Name = "Player 2"
-enteredP1Deck = "P1 Deck"
-enteredP2Deck = "P2 Deck"
-enteredP1GameWins = "0"
-enteredP2GameWins = "0"
-enteredCardName = "Chub Toad"
-lastEnteredCardName = ""
-
 global pushedP1Life
 global pushedP2Life
 global pushedP1Name
@@ -46,15 +34,35 @@ global pushedP1GameWins
 global pushedP2GameWins
 global pushedCardName
 
-pushedP1Life = ""
-pushedP2Life = ""
-pushedP1Name = ""
-pushedP2Name = ""
-pushedP1Deck = ""
-pushedP2Deck = ""
-pushedP1GameWins = ""
-pushedP2GameWins = ""
+pushedP1Life = "20"
+pushedP2Life = "20"
+pushedP1Name = "Player 1 Name"
+pushedP2Name = "Player 2 Name"
+pushedP1Deck = "Player 1 Deck"
+pushedP2Deck = "Player 2 Deck"
+pushedP1GameWins = "0"
+pushedP2GameWins = "0"
 pushedCardName = "Chillarpillar"
+enteredCardName = "Chub Toad"
+
+def getCardImage(cardName):
+    if cardName != "":
+        url = 'https://api.scryfall.com/cards/named?fuzzy=' + cardName.strip().replace(" ", "+")
+        request = requests.get(url=url)
+        sucess = 200
+        if request.status_code == sucess:
+            try:
+                cardJson = json.loads(request.content)
+                imageUrl = cardJson["image_uris"]["large"]
+                imageRequest = requests.get(imageUrl)
+                image = imageRequest.content
+                return image
+            except:
+                print("Scryfall search failed. Status code: " + str(request.status_code))
+                return False
+        else:
+            print("Failed to connect. Status code: " + str(request.status_code))
+            return False
 
 def keepWindowOpen():
 
@@ -68,6 +76,15 @@ def keepWindowOpen():
     global enteredP2GameWins
     global enteredCardName
     global lifeControllerIsOn
+    global pushedP1Life
+    global pushedP2Life
+    global pushedP1Name
+    global pushedP2Name
+    global pushedP1Deck
+    global pushedP2Deck
+    global pushedP1GameWins
+    global pushedP2GameWins
+    global pushedCardName
 
     master = tk.Tk()
     master.geometry("725x360")
@@ -91,6 +108,16 @@ def keepWindowOpen():
     guiCardName = tk.StringVar()
     guiControllerToggle = tk.BooleanVar()
 
+    guiP1Life.set(pushedP1Life)
+    guiP2Life.set(pushedP2Life)
+    guiP1Name.set(pushedP1Name)
+    guiP2Name.set(pushedP2Name)
+    guiP1Deck.set(pushedP1Deck)
+    guiP2Deck.set(pushedP2Deck)
+    guiP1GameWins.set(pushedP1GameWins)
+    guiP2GameWins.set(pushedP2GameWins)
+    guiCardName.set("Enter card name")
+
     def enterValues(var, index, mode):
         global enteredP1Life
         global enteredP2Life
@@ -102,7 +129,6 @@ def keepWindowOpen():
         global enteredP2GameWins
         global enteredCardName
         global lifeControllerIsOn
-        global displayCardInsuranceTime
 
         if lifeControllerIsOn == False:
             enteredP1Life = guiP1Life.get()
@@ -117,32 +143,30 @@ def keepWindowOpen():
         enteredCardName = guiCardName.get()
 
 
-        if (guiCardName.get() != pushedCardName):
-            height = 350
-            width = 250
-            cardImage = Image.open('controller output files\\displayCardImage.png')
-            cardImage = cardImage.resize((width, height))
-            cardPhotoImage = ImageTk.PhotoImage(cardImage)
-            displayCard = tk.Label(master, image=cardPhotoImage)
-            displayCard.photo = cardPhotoImage
-            displayCard.place(in_=master, relx=0.995, rely=0.005, x=-(width+2), y=2)
-
     def updateControllerState(var, index, mode):
         global lifeControllerIsOn
         lifeControllerIsOn = guiControllerToggle.get()
-    
-    def doubleCheckDisplayCard(var, index, mode):
-        global doubleChecked
-        if (15 < displayCardInsuranceTime) and (not doubleChecked):
+
+    guiDisplayUpdateDelayMiliseconds = 500
+    def updateGuiCardDisplay():
+        global guiCardImageName
+        if (pushedCardName != guiCardImageName):
             height = 350
             width = 250
-            cardImage = Image.open('controller output files\\displayCardImage.png')
-            cardImage = cardImage.resize((width, height))
-            cardPhotoImage = ImageTk.PhotoImage(cardImage)
-            displayCard = tk.Label(master, image=cardPhotoImage)
-            displayCard.photo = cardPhotoImage
-            displayCard.place(in_=master, relx=0.995, rely=0.005, x=-(width+2), y=2)
-            doubleChecked = True
+            guiCardImage = getCardImage(pushedCardName)
+            try:
+                cardImage = Image.open(BytesIO(guiCardImage))
+                cardImage = cardImage.resize((width, height))
+                cardPhotoImage = ImageTk.PhotoImage(cardImage)
+                displayCard = tk.Label(master, image=cardPhotoImage)
+                displayCard.photo = cardPhotoImage
+                displayCard.place(in_=master, relx=0.995, rely=0.005, x=-(width+2), y=2)
+            except:
+                pass
+            guiCardImageName = pushedCardName
+        master.after(guiDisplayUpdateDelayMiliseconds, updateGuiCardDisplay)
+
+    master.after(guiDisplayUpdateDelayMiliseconds, updateGuiCardDisplay)
 
     guiP1Life.trace_add('write', enterValues)
     guiP2Life.trace_add('write', enterValues)
@@ -153,7 +177,6 @@ def keepWindowOpen():
     guiP1GameWins.trace_add('write', enterValues)
     guiP2GameWins.trace_add('write', enterValues)
     guiCardName.trace_add('write', enterValues)
-    guiCardName.trace_add('read', doubleCheckDisplayCard)
     guiControllerToggle.trace_add('write', updateControllerState)
 
     p1Label = tk.Label(master, text="          Player 1:          ", bg="#AE3FB9")
@@ -161,7 +184,7 @@ def keepWindowOpen():
     p1NameLabel = tk.Label(master, text="Name", bg="#AE3FB9")
     p1DeckLabel = tk.Label(master, text="Deck", bg="#AE3FB9")
 
-    p1LifeEntry = tk.Entry(master, textvariable=guiP1Life, justify='center', width=5, bg="#E968F5")
+    p1LifeEntry = tk.Entry(master, textvariable=guiP1Life, justify='center', width=5, bg="#E968F5", )
     p1NameEntry = tk.Entry(master, textvariable=guiP1Name, justify='center', bg="#E968F5")
     p1DeckEntry = tk.Entry(master, textvariable=guiP1Deck, justify='center', bg="#E968F5")
     p1GameWins = tk.Entry(master, textvariable=guiP1GameWins, justify='center', width=5, bg="#E968F5")
@@ -231,15 +254,11 @@ def keepWindowOpen():
     displayCardNameLabel.grid(row=8, column=5)
     cardNameEntry.grid(row=9, column=5)
     physicalControllerToggleLabel.grid(row=2, column=3)
-    physicalControllerToggle.grid(row=3, column=3)
-    #displayCardImage.grid(row=8, column=0)
-    
+    physicalControllerToggle.grid(row=3, column=3)    
 
     master.mainloop()
 
 def saveCardImage(cardName):
-    global displayCardInsuranceTime
-    global doubleChecked
     if cardName != "":
         url = 'https://api.scryfall.com/cards/named?fuzzy=' + cardName.strip().replace(" ", "+")
         request = requests.get(url=url)
@@ -253,8 +272,6 @@ def saveCardImage(cardName):
                 file = open("controller output files\\displayCardImage.png", 'wb')
                 file.write(image)
                 file.close()
-                displayCardInsuranceTime = 0
-                doubleChecked = False
             except:
                 print("Scryfall search failed. Status code: " + str(request.status_code))
         else:
@@ -364,32 +381,105 @@ def checkForValueUpdates():
         file.close()
         updateCombinedGameWins()
 
-    global lastEnteredCardName
     if enteredCardName != pushedCardName:
-        saveCardImage(enteredCardName)
-        pushedCardName = enteredCardName
-        print("Pushed: " + pushedCardName)
-        file = open('controller output files\\display Card Name.txt', 'w')
-        file.write(pushedCardName)
+        if isRealCardName(enteredCardName):
+            pushedCardName = enteredCardName
+            saveCardImage(pushedCardName)
+            print(f'Pushed: {pushedCardName}')
+            file = open('controller output files\\display Card Name.txt', 'w')
+            file.write(pushedCardName)
+            file.close()
+
+def setPreviousValues():
+    global enteredP1Life
+    global enteredP2Life
+    global enteredP1Name
+    global enteredP2Name
+    global enteredP1Deck
+    global enteredP2Deck
+    global enteredP1GameWins
+    global enteredP2GameWins
+    global enteredCardName
+    global pushedP1Life
+    global pushedP2Life
+    global pushedP1Name
+    global pushedP2Name
+    global pushedP1Deck
+    global pushedP2Deck
+    global pushedP1GameWins
+    global pushedP2GameWins
+    global pushedCardName
+    global lastEnteredCardName
+   
+    try:
+        file = open('controller output files\\player 1 life.txt', 'r')
+        enteredP1Life = file.read()
+        pushedP1Life = enteredP1Life
         file.close()
+            
+        file = open('controller output files\\player 2 life.txt', 'r')
+        enteredP2Life = file.read()
+        pushedP2Life = enteredP2Life
+        file.close()
+                
+        file = open('controller output files\\player 1 name.txt', 'r')
+        enteredP1Name = file.read()
+        pushedP1Name = enteredP1Name
+        file.close()
+                
+        file = open('controller output files\\player 2 name.txt', 'r')
+        enteredP2Name = file.read()
+        pushedP2Name = enteredP2Name 
+        file.close()
+                
+        file = open('controller output files\\player 1 deck.txt', 'r')
+        enteredP1Deck = file.read()
+        pushedP1Deck = enteredP1Deck
+        file.close()
+
+        file = open('controller output files\\player 2 deck.txt', 'r')
+        enteredP2Deck = file.read()
+        pushedP2Deck = enteredP2Deck
+        file.close()
+        
+        file = open('controller output files\\player 1 game wins.txt', 'r')
+        enteredP1GameWins = file.read()
+        pushedP1GameWins = enteredP1GameWins
+        file.close()
+
+        file = open('controller output files\\player 2 game wins.txt', 'r')
+        enteredP2GameWins = file.read()
+        pushedP2GameWins = enteredP2GameWins
+        file.close()
+
+    except:
+        enteredP1Life = ""
+        enteredP2Life = ""
+        enteredP1Name = ""
+        enteredP2Name = ""
+        enteredP1Deck = ""
+        enteredP2Deck = ""
+        enteredP1GameWins = ""
+        enteredP2GameWins = ""
+        enteredCardName = "Chub Toad"
+        lastEnteredCardName = ""
 
 def runSerialReader():
     pass
 
+setPreviousValues()
 saveCardImage("Chillarpillar")    
 windowThread = threading.Thread(group = None, target = keepWindowOpen)
 windowThread.start()
 time.sleep(0.1)
-delaySeconds = 0.1
+delaySeconds = 0.05
 
 while threading.active_count() > 2:
     updateThread = threading.Thread(group = None, target = checkForValueUpdates())
     if updateThread.is_alive == False:
         updateThread.start()
-    #checkForValueUpdates()
     if lifeControllerIsOn:
         runSerialReader()
     time.sleep(delaySeconds)
-    displayCardInsuranceTime += 1
 
 raise SystemExit()
