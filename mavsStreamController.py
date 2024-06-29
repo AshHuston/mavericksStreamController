@@ -7,12 +7,18 @@ from sys import exit
 from PIL import Image
 from PIL import ImageTk
 from io import BytesIO
+import serial
+from serial import tools
+from serial.tools import list_ports
 
 global lifeControllerIsOn
 lifeControllerIsOn = False
 
 global guiCardImageName
 guiCardImageName = ""
+
+global controllerIsConnected
+controllerIsConnected = False
 
 global enteredP1Life
 global enteredP2Life
@@ -85,6 +91,7 @@ def keepWindowOpen():
     global pushedP1GameWins
     global pushedP2GameWins
     global pushedCardName
+    global controllerIsConnected
 
     master = tk.Tk()
     master.geometry("725x360")
@@ -108,8 +115,8 @@ def keepWindowOpen():
     guiCardName = tk.StringVar()
     guiControllerToggle = tk.BooleanVar()
 
-    guiP1Life.set(pushedP1Life)
-    guiP2Life.set(pushedP2Life)
+    #guiP1Life.set(pushedP1Life)
+    #guiP2Life.set(pushedP2Life)
     guiP1Name.set(pushedP1Name)
     guiP2Name.set(pushedP2Name)
     guiP1Deck.set(pushedP1Deck)
@@ -147,7 +154,6 @@ def keepWindowOpen():
         global lifeControllerIsOn
         lifeControllerIsOn = guiControllerToggle.get()
 
-    guiDisplayUpdateDelayMiliseconds = 500
     def updateGuiCardDisplay():
         global guiCardImageName
         if (pushedCardName != guiCardImageName):
@@ -166,6 +172,7 @@ def keepWindowOpen():
             guiCardImageName = pushedCardName
         master.after(guiDisplayUpdateDelayMiliseconds, updateGuiCardDisplay)
 
+    guiDisplayUpdateDelayMiliseconds = 500
     master.after(guiDisplayUpdateDelayMiliseconds, updateGuiCardDisplay)
 
     guiP1Life.trace_add('write', enterValues)
@@ -195,7 +202,8 @@ def keepWindowOpen():
     cardNameEntry = tk.Entry(master, textvariable=guiCardName, justify='center', bg="#E4E594")
     physicalControllerToggleLabel = tk.Label(master, text="Physical Controller?", bg="#695EB5")
     physicalControllerToggle = tk.Checkbutton(master, variable=guiControllerToggle, justify='center', bg="#695EB5")
-       
+    global physicalControllerIsConnectedLabel
+    physicalControllerIsConnectedLabel = tk.Label(master)
     
     p2Label = tk.Label(master, text="          Player 2:          ", bg="#46B6B8")
     p2LifeLabel = tk.Label(master, text="Life Total", bg="#46B6B8")
@@ -207,19 +215,37 @@ def keepWindowOpen():
     p2DeckEntry = tk.Entry(master, textvariable=guiP2Deck, justify='center', bg="#5CDFE1")
     p2GameWins = tk.Entry(master, textvariable=guiP2GameWins, justify='center', width=5, bg="#5CDFE1")
 
+    def updateControllerIsConnectedDisplay():
+        global controllerIsConnected
+        global physicalControllerIsConnectedLabel
+        if controllerIsConnected:
+            physicalControllerIsConnectedLabel.config(text="Connected", bg="#04D700")
+        else:
+            physicalControllerIsConnectedLabel.config(text="NOT connected", bg="#D74500")
+
+        master.after(guiControllerConnectedDelayMiliseconds, updateControllerIsConnectedDisplay)
+
+    guiControllerConnectedDelayMiliseconds = 10
+    master.after(guiControllerConnectedDelayMiliseconds, updateControllerIsConnectedDisplay)
+
     def checkForToggleDisables():
-        
         while(windowThread.is_alive() == True):
             time.sleep(0.15)
             global pushedP1Life
             global pushedP2Life
+            global enteredP1Life
+            global enteredP2Life
             global pushedP1GameWins
             global pushedP2GameWins
-            if lifeControllerIsOn:     
-                p1LifeEntry.configure(text=pushedP1Life, state='disabled', disabledbackground="#E1B4E5")
-                p2LifeEntry.configure(text=pushedP2Life, state='disabled', disabledbackground="#A8CBCB")
-                p1GameWins.configure(text=pushedP1GameWins, state='disabled', disabledbackground="#E1B4E5")
-                p2GameWins.configure(text=pushedP2GameWins, state='disabled', disabledbackground="#A8CBCB")
+            if lifeControllerIsOn:
+                guiP1Life.set(enteredP1Life)
+                guiP2Life.set(enteredP2Life)
+                guiP1GameWins.set(pushedP1GameWins)
+                guiP2GameWins.set(pushedP2GameWins)     
+                p1LifeEntry.configure(state='disabled', disabledbackground="#E1B4E5")
+                p2LifeEntry.configure(state='disabled', disabledbackground="#A8CBCB")
+                p1GameWins.configure(state='disabled', disabledbackground="#E1B4E5")
+                p2GameWins.configure(state='disabled', disabledbackground="#A8CBCB")
             else:
                 p1LifeEntry.configure(state='normal')
                 p2LifeEntry.configure(state='normal')
@@ -249,6 +275,7 @@ def keepWindowOpen():
     p2DeckEntry.grid(row=4, column=5)
     p2GameWins.grid(row=5, column=4, sticky="w")
 
+    physicalControllerIsConnectedLabel.grid(row=1, column=3)
     gameWinsLabel1.grid(row=4, column=3)
     gameWinsLabel2.grid(row=5, column=3)
     displayCardNameLabel.grid(row=8, column=5)
@@ -464,8 +491,61 @@ def setPreviousValues():
         enteredCardName = "Chub Toad"
         lastEnteredCardName = ""
 
+def updateLifeTotals(serialData):
+    global pushedP1Life
+    global pushedP2Life
+
+    global enteredP1Life
+    global enteredP2Life
+    global pushedP1GameWins
+    global pushedP2GameWins
+    if 100 <= serialData <= 200:
+        enteredP1Life =  str(serialData-100)
+    if 200 < serialData <= 300:
+        enteredP2Life =  str(serialData-200)
+    if 200 < serialData <= 300:
+        pass #Add gamwin values here.
+
 def runSerialReader():
-    pass
+    global lifeControllerIsOn
+    global controllerIsConnected
+    controllerUpdateSeconds = 0.25
+    while lifeControllerIsOn:
+        try:
+            time.sleep(controllerUpdateSeconds)
+            ports = list_ports.comports(include_links=True)
+            if controllerIsConnected:
+                with serial.Serial() as ser:
+                    ser.timeout = 0.005
+                    ser.baudrate = 9600
+                    ser.port = ports[0].device
+                    ser.open()
+                    while lifeControllerIsOn and controllerIsConnected:
+                        ports = list_ports.comports(include_links=True)
+                        if ser.readable:
+                            serialData = ser.readline()
+                            if str(serialData) != "b''":
+                                serialData = int(serialData.decode())
+                            else:
+                                serialData = 0
+                        else:
+                            serialData = "ERROR"
+                            serialData = 0
+                            print(serialData)
+
+                        if serialData != 0:
+                            #print(serialData)
+                            updateLifeTotals(serialData)
+        except:
+            ser.close()
+
+def checkIfcontrollerIsConnected():
+    global controllerIsConnected
+    ports = list_ports.comports(include_links=True)
+    controllerIsConnected = False
+    for any in ports:
+        if any.description.lower().count("arduino uno") >= 1:
+            controllerIsConnected = True
 
 setPreviousValues()
 saveCardImage("Chillarpillar")    
@@ -475,11 +555,12 @@ time.sleep(0.1)
 delaySeconds = 0.05
 
 while threading.active_count() > 2:
-    updateThread = threading.Thread(group = None, target = checkForValueUpdates())
-    if updateThread.is_alive == False:
-        updateThread.start()
+    checkIfcontrollerIsConnected()
+    checkForValueUpdates()
     if lifeControllerIsOn:
-        runSerialReader()
+        controllerThread = threading.Thread(group = None, target = runSerialReader)
+        if controllerThread.is_alive() == False:
+            controllerThread.start()
     time.sleep(delaySeconds)
 
 raise SystemExit()
