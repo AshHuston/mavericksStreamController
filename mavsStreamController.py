@@ -20,6 +20,8 @@ guiCardImageName = ""
 global controllerIsConnected
 controllerIsConnected = False
 
+global connectedControllerPort
+
 global enteredP1Life
 global enteredP2Life
 global enteredP1Name
@@ -491,41 +493,41 @@ def setPreviousValues():
         enteredCardName = "Chub Toad"
         lastEnteredCardName = ""
 
-def updateLifeTotals(serialData):
-    global pushedP1Life
-    global pushedP2Life
-
+def updateLifeTotalsAndGameWins(serialData):
     global enteredP1Life
     global enteredP2Life
-    global pushedP1GameWins
-    global pushedP2GameWins
-    if 100 <= serialData <= 200:
-        enteredP1Life =  str(serialData-100)
-    if 200 < serialData <= 300:
-        enteredP2Life =  str(serialData-200)
-    if 200 < serialData <= 300:
-        pass #Add gamwin values here.
+    global enteredP1GameWins
+    global enteredP2GameWins
+    try:
+        if 100 <= serialData <= 200:
+            enteredP1Life =  str(serialData-100)
+        if 200 < serialData <= 300:
+            enteredP2Life =  str(serialData-200)
+        if serialData == 301:
+            enteredP1GameWins = "1"
+        if serialData == 302:
+            enteredP2GameWins = "1"
+    except:
+        pass
 
 def runSerialReader():
     global lifeControllerIsOn
     global controllerIsConnected
+    global connectedControllerPort
     controllerUpdateSeconds = 0.25
     while lifeControllerIsOn:
         try:
             time.sleep(controllerUpdateSeconds)
             ports = list_ports.comports(include_links=True)
             if controllerIsConnected:
-                with serial.Serial() as ser:
-                    ser.timeout = 0.005
-                    ser.baudrate = 9600
-                    ser.port = ports[0].device
-                    ser.open()
+                with connectedControllerPort as ser:
                     while lifeControllerIsOn and controllerIsConnected:
                         ports = list_ports.comports(include_links=True)
                         if ser.readable:
                             serialData = ser.readline()
                             if str(serialData) != "b''":
                                 serialData = int(serialData.decode())
+                                print(serialData)
                             else:
                                 serialData = 0
                         else:
@@ -535,17 +537,27 @@ def runSerialReader():
 
                         if serialData != 0:
                             #print(serialData)
-                            updateLifeTotals(serialData)
+                            updateLifeTotalsAndGameWins(serialData)
         except:
             ser.close()
 
 def checkIfcontrollerIsConnected():
     global controllerIsConnected
+    global connectedControllerPort
     ports = list_ports.comports(include_links=True)
     controllerIsConnected = False
     for any in ports:
-        if any.description.lower().count("arduino uno") >= 1:
-            controllerIsConnected = True
+        if connectedControllerPort.is_open() == False:
+            if any.description.lower().count("arduino uno") >= 1:
+                connectedControllerPort = any
+                with serial.Serial() as ser:
+                        ser.timeout = 0.005
+                        ser.baudrate = 9600
+                        ser.port = connectedControllerPort.device
+                        ser.open()
+                controllerIsConnected = True
+
+# Needs to add a default serial port to make the port stop reconecting over and over. OR figure out another way to stop that problem.
 
 setPreviousValues()
 saveCardImage("Chillarpillar")    
@@ -554,7 +566,8 @@ windowThread.start()
 time.sleep(0.1)
 delaySeconds = 0.05
 
-while threading.active_count() > 2:
+#while threading.active_count() >= 2:
+while windowThread.is_alive():
     checkIfcontrollerIsConnected()
     checkForValueUpdates()
     if lifeControllerIsOn:
@@ -562,5 +575,5 @@ while threading.active_count() > 2:
         if controllerThread.is_alive() == False:
             controllerThread.start()
     time.sleep(delaySeconds)
-
+exit()
 raise SystemExit()

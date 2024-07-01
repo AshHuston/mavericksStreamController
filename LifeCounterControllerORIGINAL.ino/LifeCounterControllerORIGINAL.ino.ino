@@ -59,8 +59,7 @@ void setup() {
 }
 
 void loop() {
-  currentState1 = pinMode(player1LED, OUTPUT);
-  pinMode(player2LED, OUTPUT);
+  currentState1 = digitalRead(b1Pin);
   currentState2 = digitalRead(b2Pin);
   currentState3 = digitalRead(b3Pin);
   currentState4 = digitalRead(b4Pin);
