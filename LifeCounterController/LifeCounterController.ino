@@ -145,29 +145,33 @@ void loop() {
      player2Win = false;
     sendPlayer1GameWinSignal = true;
     sendPlayer2GameWinSignal = true;
+    Serial.println("311");
+    Serial.println("312");
     }
     
     
     if(player2Life <= 100){           //Check for a player at 0
      player1Win = true;
+     Serial.println("301");
      countUp = true;
     }
     if(player1Life <= 100){
      player2Win = true;
+     Serial.println("302");
      countUp = true;
     }
     
     if (countUp == true){             //Auto reset the life totals
      if (player1Life < 120){
        player1Life++;
-       player1Life = 120;
+       player1Life = 120; //skip countup
   }else if(player1Life > 120){
      player1Life--;
      player1Life = 120;
   }
      if (player2Life < 120){
         player2Life++;
-        player2Life = 120;
+        player2Life = 120;  //skip countup
   }else if(player2Life > 120){
      player2Life--;
      player2Life = 120;
@@ -181,7 +185,6 @@ void loop() {
     if(player1Win == true){             //Game win indicators
       digitalWrite(player1LED, HIGH);
       if (sendPlayer1GameWinSignal){
-        Serial.println("301");
         sendPlayer1GameWinSignal = false;
       }
     }else{
@@ -204,6 +207,7 @@ void loop() {
   lastState2 = currentState2;
   lastState3 = currentState3;
   lastState4 = currentState4;
+  lastState5 = currentState5;
 
 if ((lastLife1 != player1Life) || (lastLife2 != player2Life)){    //print changes to serial
   if (lastLife1 != player1Life){

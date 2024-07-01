@@ -10,6 +10,7 @@ from io import BytesIO
 import serial
 from serial import tools
 from serial.tools import list_ports
+import os
 
 global lifeControllerIsOn
 lifeControllerIsOn = False
@@ -117,15 +118,15 @@ def keepWindowOpen():
     guiCardName = tk.StringVar()
     guiControllerToggle = tk.BooleanVar()
 
-    #guiP1Life.set(pushedP1Life)
-    #guiP2Life.set(pushedP2Life)
+    guiP1Life.set(pushedP1Life)
+    guiP2Life.set(pushedP2Life)
     guiP1Name.set(pushedP1Name)
     guiP2Name.set(pushedP2Name)
     guiP1Deck.set(pushedP1Deck)
     guiP2Deck.set(pushedP2Deck)
     guiP1GameWins.set(pushedP1GameWins)
     guiP2GameWins.set(pushedP2GameWins)
-    guiCardName.set("Enter card name")
+    guiCardName.set(pushedCardName)
 
     def enterValues(var, index, mode):
         global enteredP1Life
@@ -438,75 +439,101 @@ def setPreviousValues():
     global pushedP1GameWins
     global pushedP2GameWins
     global pushedCardName
-    global lastEnteredCardName
    
     try:
         file = open('controller output files\\player 1 life.txt', 'r')
         enteredP1Life = file.read()
         pushedP1Life = enteredP1Life
         file.close()
-            
+    except:
+        enteredP1Life = ""  
+
+    try:     
         file = open('controller output files\\player 2 life.txt', 'r')
         enteredP2Life = file.read()
         pushedP2Life = enteredP2Life
         file.close()
-                
+    except:
+        enteredP2Life = ""  
+        
+    try:
         file = open('controller output files\\player 1 name.txt', 'r')
         enteredP1Name = file.read()
         pushedP1Name = enteredP1Name
         file.close()
-                
+    except:
+        enteredP1Name = ""  
+        
+    try:
         file = open('controller output files\\player 2 name.txt', 'r')
         enteredP2Name = file.read()
         pushedP2Name = enteredP2Name 
         file.close()
-                
+    except:
+        enteredP2Name = ""  
+        
+    try:
         file = open('controller output files\\player 1 deck.txt', 'r')
         enteredP1Deck = file.read()
         pushedP1Deck = enteredP1Deck
         file.close()
-
+    except:
+        enteredP1Deck = ""  
+        
+    try:
         file = open('controller output files\\player 2 deck.txt', 'r')
         enteredP2Deck = file.read()
         pushedP2Deck = enteredP2Deck
         file.close()
+    except:
+        enteredP2Deck = ""  
         
+    try:
         file = open('controller output files\\player 1 game wins.txt', 'r')
         enteredP1GameWins = file.read()
         pushedP1GameWins = enteredP1GameWins
         file.close()
-
+    except:
+        enteredP1GameWins = ""  
+        
+    try:
         file = open('controller output files\\player 2 game wins.txt', 'r')
         enteredP2GameWins = file.read()
         pushedP2GameWins = enteredP2GameWins
         file.close()
-
     except:
-        enteredP1Life = ""
-        enteredP2Life = ""
-        enteredP1Name = ""
-        enteredP2Name = ""
-        enteredP1Deck = ""
-        enteredP2Deck = ""
-        enteredP1GameWins = ""
         enteredP2GameWins = ""
-        enteredCardName = "Chub Toad"
-        lastEnteredCardName = ""
+
+    try:
+        file = open('controller output files\\display Card Name.txt', 'r')
+        enteredCardName = file.read()
+        pushedCardName = enteredCardName
+        file.close()
+    except:
+        enteredCardName = ""  
 
 def updateLifeTotalsAndGameWins(serialData):
     global enteredP1Life
     global enteredP2Life
     global enteredP1GameWins
     global enteredP2GameWins
+    player1WinSignal = 301
+    player2WinSignal = 302
+    player1NoWinSignal = 311
+    player2NoWinSignal = 312
     try:
         if 100 <= serialData <= 200:
             enteredP1Life =  str(serialData-100)
         if 200 < serialData <= 300:
             enteredP2Life =  str(serialData-200)
-        if serialData == 301:
-            enteredP1GameWins = "1"
-        if serialData == 302:
-            enteredP2GameWins = "1"
+        if serialData == player1WinSignal:
+            enteredP1GameWins = str(int(enteredP1GameWins) + 1)
+        if serialData == player2WinSignal:
+            enteredP2GameWins = str(int(enteredP2GameWins) + 1)
+        if serialData == player1NoWinSignal:
+            enteredP1GameWins = "0"
+        if serialData == player2NoWinSignal:
+            enteredP2GameWins = "0" 
     except:
         pass
 
@@ -514,55 +541,61 @@ def runSerialReader():
     global lifeControllerIsOn
     global controllerIsConnected
     global connectedControllerPort
-    controllerUpdateSeconds = 0.25
+    controllerUpdateSeconds = 0.15
     while lifeControllerIsOn:
+        time.sleep(controllerUpdateSeconds)
         try:
-            time.sleep(controllerUpdateSeconds)
-            ports = list_ports.comports(include_links=True)
             if controllerIsConnected:
-                with connectedControllerPort as ser:
-                    while lifeControllerIsOn and controllerIsConnected:
-                        ports = list_ports.comports(include_links=True)
-                        if ser.readable:
-                            serialData = ser.readline()
-                            if str(serialData) != "b''":
-                                serialData = int(serialData.decode())
-                                print(serialData)
-                            else:
-                                serialData = 0
-                        else:
-                            serialData = "ERROR"
-                            serialData = 0
-                            print(serialData)
-
-                        if serialData != 0:
-                            #print(serialData)
-                            updateLifeTotalsAndGameWins(serialData)
+                if connectedControllerPort.readable():
+                    serialData = connectedControllerPort.readline().decode()
+                    if serialData != "":
+                        serialData = int(serialData)
+                    else:
+                        serialData = 0
+                else:
+                    #serialData = "ERROR"
+                    serialData = 0
+                if serialData != 0:
+                    print(serialData)
+                    updateLifeTotalsAndGameWins(serialData)
         except:
-            ser.close()
+            #ser.close()
+            print("err")
+            pass
 
 def checkIfcontrollerIsConnected():
     global controllerIsConnected
     global connectedControllerPort
     ports = list_ports.comports(include_links=True)
-    controllerIsConnected = False
+    #controllerIsConnected = False
+    connectionFound = False
     for any in ports:
-        if connectedControllerPort.is_open() == False:
-            if any.description.lower().count("arduino uno") >= 1:
-                connectedControllerPort = any
-                with serial.Serial() as ser:
-                        ser.timeout = 0.005
-                        ser.baudrate = 9600
-                        ser.port = connectedControllerPort.device
-                        ser.open()
-                controllerIsConnected = True
+        if any.description.lower().count("arduino uno") >= 1:
+            controllerIsConnected = True
+            connectionFound = True
+            if connectedControllerPort.is_open == False:
+                connectedControllerPort.timeout = 0.005
+                connectedControllerPort.baudrate = 9600
+                connectedControllerPort.port = any.device
+                try:
+                    connectedControllerPort.open()
+                except:
+                    pass
+    if connectionFound == False:
+        controllerIsConnected = False
 
-# Needs to add a default serial port to make the port stop reconecting over and over. OR figure out another way to stop that problem.
+connectedControllerPort = serial.Serial() # Blank start port so when we check it later we don't crash
+
+path = 'controller output files'
+folderExists = os.path.exists(path)
+if folderExists == False:
+    os.makedirs(path)
 
 setPreviousValues()
 saveCardImage("Chillarpillar")    
 windowThread = threading.Thread(group = None, target = keepWindowOpen)
 windowThread.start()
+controllerThread = threading.Thread(group = None, target = runSerialReader)
 time.sleep(0.1)
 delaySeconds = 0.05
 
@@ -571,9 +604,16 @@ while windowThread.is_alive():
     checkIfcontrollerIsConnected()
     checkForValueUpdates()
     if lifeControllerIsOn:
-        controllerThread = threading.Thread(group = None, target = runSerialReader)
         if controllerThread.is_alive() == False:
+            print("---------------------Start serial reader")
             controllerThread.start()
+    else:
+        controllerThread = threading.Thread(group = None, target = runSerialReader)
     time.sleep(delaySeconds)
-exit()
+
+try:
+    connectedControllerPort.close()
+except:
+    pass
+
 raise SystemExit()
