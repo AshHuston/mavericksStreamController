@@ -8,11 +8,11 @@ int player2Life = 120;
 boolean player1Win = false;
 boolean player2Win = false;
 
-const int b1Pin = 2; 
-const int b2Pin = 3;
-const int b3Pin = 4;
-const int b4Pin = 5; 
-const int b5Pin = 6; 
+const int b1Pin = 3;  //Adjusting these all up by 1 for the mavs box
+const int b2Pin = 4;
+const int b3Pin = 5;
+const int b4Pin = 6; 
+const int b5Pin = 7; 
 
 int lastState1 = HIGH;
 int lastState2 = HIGH;
