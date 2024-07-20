@@ -570,7 +570,7 @@ def checkIfcontrollerIsConnected():
     #controllerIsConnected = False
     connectionFound = False
     for any in ports:
-        if any.description.lower().count("arduino uno") >= 1:
+        if any.manufacturer.count("wch.cn") >= 1:
             controllerIsConnected = True
             connectionFound = True
             if connectedControllerPort.is_open == False:
