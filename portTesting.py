@@ -21,7 +21,7 @@ while True:
         print(f'{i}.  manufacturer  {any.manufacturer}')
         print("----------------")
         '''
-        if any.serial_number.count("arduino uno") >= 1:
+        if any.manufacturer.count("wch.cn") >= 1:
             controllerIsConnected = True
             connectionFound = True
             if connectedControllerPort.is_open == False:
