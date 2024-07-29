@@ -537,7 +537,7 @@ def updateLifeTotalsAndGameWins(serialData):
     except:
         pass
 
-def runSerialReader():
+def runSerialReader():      
     global lifeControllerIsOn
     global controllerIsConnected
     global connectedControllerPort
@@ -553,21 +553,21 @@ def runSerialReader():
                     else:
                         serialData = 0
                 else:
-                    #serialData = "ERROR"
                     serialData = 0
                 if serialData != 0:
                     print(serialData)
                     updateLifeTotalsAndGameWins(serialData)
         except:
-            #ser.close()
+#       The except block was really just used for debuging. 
+#       If it fails once or twice it isn't a big deal because it will check again in .15 seconds. 
+#       Maybe I use it to check for repeat failures and do something then?
             print("err")
-            pass
+
 
 def checkIfcontrollerIsConnected():
     global controllerIsConnected
     global connectedControllerPort
     ports = list_ports.comports(include_links=True)
-    #controllerIsConnected = False
     connectionFound = False
     for any in ports:
         if any.manufacturer.count("wch.cn") >= 1:
@@ -584,7 +584,7 @@ def checkIfcontrollerIsConnected():
     if connectionFound == False:
         controllerIsConnected = False
 
-connectedControllerPort = serial.Serial() # Blank start port so when we check it later we don't crash
+connectedControllerPort = serial.Serial() # Starting blank port so when we check it later we don't crash. Seemed easier than try/excepting every time we look at the port. Though maybe we should be doing that? 
 
 path = 'controller output files'
 folderExists = os.path.exists(path)
@@ -592,14 +592,12 @@ if folderExists == False:
     os.makedirs(path)
 
 setPreviousValues()
-saveCardImage("Chillarpillar")    
+saveCardImage("Chillarpillar")    # Default starting image
 windowThread = threading.Thread(group = None, target = keepWindowOpen)
 windowThread.start()
 controllerThread = threading.Thread(group = None, target = runSerialReader)
-time.sleep(0.1)
 delaySeconds = 0.05
 
-#while threading.active_count() >= 2:
 while windowThread.is_alive():
     checkIfcontrollerIsConnected()
     checkForValueUpdates()
